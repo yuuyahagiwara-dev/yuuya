@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ダッシュボード - 勤怠管理システム</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-logo">
+      <span>勤怠管理</span>
+    </div>
+    <nav class="header-nav">
+      <a href="dashboard.html" class="active">打刻</a>
+      <a href="history.html">勤怠履歴</a>
+      <a href="shift.html">シフト</a>
+      <a href="approval.html">申請</a>
+      <a href="report.html">レポート</a>
+    </nav>
+    <div class="header-user">
+      <span class="header-user-name"></span>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="main-content">
+    <div class="container">
+      <!-- 打刻エリア -->
+      <div class="card" id="punchArea">
+        <div class="punch-area">
+          <div id="currentTime" class="current-time">--:--:--</div>
+          <div id="currentDate" class="current-date">----年--月--日（-）</div>
+
+          <div class="punch-buttons">
+            <button id="btnClockIn" class="btn-punch clock-in">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              出勤
+            </button>
+            <button id="btnBreakStart" class="btn-punch break-start" disabled>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="6" y="4" width="4" height="16"/>
+                <rect x="14" y="4" width="4" height="16"/>
+              </svg>
+              休憩開始
+            </button>
+            <button id="btnBreakEnd" class="btn-punch break-end" disabled>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              休憩終了
+            </button>
+            <button id="btnClockOut" class="btn-punch clock-out" disabled>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              退勤
+            </button>
+          </div>
+
+          <div id="punchStatus" class="punch-status">
+            <!-- 打刻状況がここに表示される -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 今月のサマリー -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-icon">📅</div>
+          <div class="stat-card-value" id="workDays">--</div>
+          <div class="stat-card-label">出勤日数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">⏱️</div>
+          <div class="stat-card-value" id="totalHours">--</div>
+          <div class="stat-card-label">総労働時間</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">🌙</div>
+          <div class="stat-card-value" id="overtimeHours">--</div>
+          <div class="stat-card-label">残業時間</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">☕</div>
+          <div class="stat-card-value" id="breakHours">--</div>
+          <div class="stat-card-label">休憩時間</div>
+        </div>
+      </div>
+
+      <!-- 最近の勤怠 -->
+      <div class="card">
+        <div class="card-header">
+          <span>最近の勤怠記録</span>
+          <a href="history.html" class="btn btn-sm btn-outline">すべて見る</a>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>出勤</th>
+                  <th>退勤</th>
+                  <th>休憩</th>
+                  <th>労働時間</th>
+                  <th>状態</th>
+                </tr>
+              </thead>
+              <tbody id="recentRecords">
+                <!-- 最近の記録がここに表示される -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/attendance.js"></script>
+  <script>
+    // 月間サマリーを更新
+    function updateMonthlySummary() {
+      const user = Auth.getCurrentUser();
+      if (!user) return;
+
+      const now = new Date();
+      const records = Storage.getMonthlyAttendance(user.id, now.getFullYear(), now.getMonth() + 1);
+
+      let workDays = 0;
+      let totalMinutes = 0;
+      let totalBreakMinutes = 0;
+
+      records.forEach(record => {
+        if (record.clockIn && record.clockOut) {
+          workDays++;
+          const workMinutes = Storage.calculateDuration(record.clockIn, record.clockOut);
+          let breakMinutes = 0;
+          if (record.breaks) {
+            record.breaks.forEach(b => {
+              if (b.start && b.end) {
+                breakMinutes += Storage.calculateDuration(b.start, b.end);
+              }
+            });
+          }
+          totalMinutes += workMinutes - breakMinutes;
+          totalBreakMinutes += breakMinutes;
+        }
+      });
+
+      // 残業計算（1日8時間を超えた分）
+      const standardMinutes = workDays * 8 * 60;
+      const overtimeMinutes = Math.max(0, totalMinutes - standardMinutes);
+
+      document.getElementById('workDays').textContent = `${workDays}日`;
+      document.getElementById('totalHours').textContent = `${Math.floor(totalMinutes / 60)}h`;
+      document.getElementById('overtimeHours').textContent = `${Math.floor(overtimeMinutes / 60)}h`;
+      document.getElementById('breakHours').textContent = `${Math.floor(totalBreakMinutes / 60)}h`;
+    }
+
+    // 最近の記録を表示
+    function updateRecentRecords() {
+      const user = Auth.getCurrentUser();
+      if (!user) return;
+
+      const records = Storage.getUserAttendance(user.id)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5);
+
+      const tbody = document.getElementById('recentRecords');
+      if (!tbody) return;
+
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">記録がありません</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = records.map(record => {
+        let breakMinutes = 0;
+        if (record.breaks) {
+          record.breaks.forEach(b => {
+            if (b.start && b.end) {
+              breakMinutes += Storage.calculateDuration(b.start, b.end);
+            }
+          });
+        }
+
+        let workMinutes = 0;
+        if (record.clockIn && record.clockOut) {
+          workMinutes = Storage.calculateDuration(record.clockIn, record.clockOut) - breakMinutes;
+        }
+
+        let statusBadge = '';
+        if (record.clockOut) {
+          statusBadge = '<span class="badge badge-success">完了</span>';
+        } else if (record.clockIn) {
+          statusBadge = '<span class="badge badge-warning">勤務中</span>';
+        } else {
+          statusBadge = '<span class="badge badge-secondary">未出勤</span>';
+        }
+
+        return `
+          <tr>
+            <td>${record.date}</td>
+            <td>${record.clockIn || '--:--'}</td>
+            <td>${record.clockOut || '--:--'}</td>
+            <td>${Storage.minutesToHoursMinutes(breakMinutes)}</td>
+            <td>${Storage.minutesToHoursMinutes(workMinutes)}</td>
+            <td>${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ページ読み込み時
+    document.addEventListener('DOMContentLoaded', () => {
+      updateMonthlySummary();
+      updateRecentRecords();
+    });
+  </script>
+</body>
+</html>

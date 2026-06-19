@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>申請管理 - 勤怠管理システム</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-logo">
+      <span>勤怠管理</span>
+    </div>
+    <nav class="header-nav">
+      <a href="dashboard.html">打刻</a>
+      <a href="history.html">勤怠履歴</a>
+      <a href="shift.html">シフト</a>
+      <a href="approval.html" class="active">申請</a>
+      <a href="report.html">レポート</a>
+    </nav>
+    <div class="header-user">
+      <span class="header-user-name"></span>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="main-content">
+    <div class="container">
+      <!-- タブ -->
+      <div class="tabs">
+        <button class="tab active" data-tab="newRequest">新規申請</button>
+        <button class="tab" data-tab="myRequests">申請履歴</button>
+        <button class="tab" data-tab="pendingRequests" id="pendingTab">
+          承認待ち
+          <span id="pendingCount" class="badge badge-danger" style="margin-left: 5px; display: none;">0</span>
+        </button>
+      </div>
+
+      <!-- 新規申請 -->
+      <div class="tab-content active" id="newRequest">
+        <div class="card">
+          <div class="card-header">
+            <span>有給休暇申請</span>
+          </div>
+          <div class="card-body">
+            <form id="leaveForm">
+              <div class="form-group">
+                <label for="leaveStartDate">開始日</label>
+                <input type="date" id="leaveStartDate" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="leaveEndDate">終了日（複数日の場合）</label>
+                <input type="date" id="leaveEndDate" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="leaveType">休暇種別</label>
+                <select id="leaveType" class="form-control">
+                  <option value="paid">有給休暇</option>
+                  <option value="half_am">半休（午前）</option>
+                  <option value="half_pm">半休（午後）</option>
+                  <option value="special">特別休暇</option>
+                  <option value="sick">病気休暇</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="leaveReason">理由</label>
+                <textarea id="leaveReason" class="form-control" rows="3" required placeholder="休暇の理由を入力してください"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">申請する</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span>その他の申請</span>
+          </div>
+          <div class="card-body">
+            <p class="text-muted">勤怠修正申請は「勤怠履歴」ページから行えます。</p>
+            <a href="history.html" class="btn btn-outline">勤怠履歴へ</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 申請履歴 -->
+      <div class="tab-content" id="myRequests">
+        <div class="card">
+          <div class="card-header">
+            <span>申請履歴</span>
+          </div>
+          <div class="card-body">
+            <ul class="request-list" id="myRequestList">
+              <!-- 申請履歴がここに表示される -->
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 承認待ち（管理者用） -->
+      <div class="tab-content" id="pendingRequests">
+        <div class="card">
+          <div class="card-header">
+            <span>承認待ち申請</span>
+          </div>
+          <div class="card-body">
+            <ul class="request-list" id="pendingRequestList">
+              <!-- 承認待ち申請がここに表示される -->
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/approval.js"></script>
+  <script>
+    // 管理者でない場合は承認待ちタブを非表示
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.isAdmin()) {
+        document.getElementById('pendingTab').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>勤怠履歴 - 勤怠管理システム</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-logo">
+      <span>勤怠管理</span>
+    </div>
+    <nav class="header-nav">
+      <a href="dashboard.html">打刻</a>
+      <a href="history.html" class="active">勤怠履歴</a>
+      <a href="shift.html">シフト</a>
+      <a href="approval.html">申請</a>
+      <a href="report.html">レポート</a>
+    </nav>
+    <div class="header-user">
+      <span class="header-user-name"></span>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="main-content">
+    <div class="container">
+      <!-- カレンダー -->
+      <div class="card">
+        <div class="calendar">
+          <div class="calendar-header">
+            <div class="calendar-nav">
+              <button id="prevMonth">&lt;</button>
+            </div>
+            <h3 id="calendarTitle">----年--月</h3>
+            <div class="calendar-nav">
+              <button id="nextMonth">&gt;</button>
+            </div>
+          </div>
+          <div class="calendar-grid" id="calendarGrid">
+            <!-- カレンダーがここに表示される -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 勤怠一覧 -->
+      <div class="card">
+        <div class="card-header">
+          <span id="monthTitle">--月の勤怠記録</span>
+          <button class="btn btn-sm btn-primary" id="btnRequestEdit">修正申請</button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>曜日</th>
+                  <th>出勤</th>
+                  <th>退勤</th>
+                  <th>休憩</th>
+                  <th>労働時間</th>
+                  <th>残業</th>
+                  <th>備考</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceList">
+                <!-- 勤怠一覧がここに表示される -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 修正申請モーダル -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>勤怠修正申請</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="editForm">
+          <div class="form-group">
+            <label for="editDate">日付</label>
+            <input type="date" id="editDate" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="editClockIn">出勤時刻</label>
+            <input type="time" id="editClockIn" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="editClockOut">退勤時刻</label>
+            <input type="time" id="editClockOut" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="editReason">修正理由</label>
+            <textarea id="editReason" class="form-control" rows="3" required placeholder="修正が必要な理由を入力してください"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="submitEditRequest()">申請する</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let currentYear, currentMonth;
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', () => {
+      const now = new Date();
+      currentYear = now.getFullYear();
+      currentMonth = now.getMonth() + 1;
+      renderCalendar();
+      renderAttendanceList();
+
+      document.getElementById('prevMonth').addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 1) {
+          currentMonth = 12;
+          currentYear--;
+        }
+        renderCalendar();
+        renderAttendanceList();
+      });
+
+      document.getElementById('nextMonth').addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 12) {
+          currentMonth = 1;
+          currentYear++;
+        }
+        renderCalendar();
+        renderAttendanceList();
+      });
+
+      document.getElementById('btnRequestEdit').addEventListener('click', () => {
+        document.getElementById('editModal').classList.add('active');
+      });
+    });
+
+    // カレンダーを描画
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const title = document.getElementById('calendarTitle');
+      const user = Auth.getCurrentUser();
+
+      title.textContent = `${currentYear}年${currentMonth}月`;
+
+      const firstDay = new Date(currentYear, currentMonth - 1, 1);
+      const lastDay = new Date(currentYear, currentMonth, 0);
+      const startWeekday = firstDay.getDay();
+      const totalDays = lastDay.getDate();
+
+      // 月間の勤怠データを取得
+      const records = Storage.getMonthlyAttendance(user.id, currentYear, currentMonth);
+      const recordMap = {};
+      records.forEach(r => {
+        recordMap[r.date] = r;
+      });
+
+      let html = '';
+
+      // 曜日ヘッダー
+      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      weekdays.forEach(day => {
+        html += `<div class="calendar-day-header">${day}</div>`;
+      });
+
+      // 前月の空白
+      const prevLastDay = new Date(currentYear, currentMonth - 1, 0).getDate();
+      for (let i = startWeekday - 1; i >= 0; i--) {
+        html += `<div class="calendar-day other-month"><div class="date">${prevLastDay - i}</div></div>`;
+      }
+
+      // 今月の日付
+      const today = new Date();
+      for (let day = 1; day <= totalDays; day++) {
+        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = today.getFullYear() === currentYear &&
+                        today.getMonth() + 1 === currentMonth &&
+                        today.getDate() === day;
+        const record = recordMap[dateStr];
+
+        let attendanceInfo = '';
+        let attendanceClass = '';
+        if (record && record.clockIn) {
+          attendanceInfo = `${record.clockIn} - ${record.clockOut || '勤務中'}`;
+          attendanceClass = record.clockOut ? 'worked' : 'working';
+        }
+
+        const dayOfWeek = new Date(currentYear, currentMonth - 1, day).getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          attendanceClass = attendanceClass || 'holiday';
+        }
+
+        html += `
+          <div class="calendar-day ${isToday ? 'today' : ''}" onclick="showDayDetail('${dateStr}')">
+            <div class="date">${day}</div>
+            <div class="attendance-info ${attendanceClass}">${attendanceInfo}</div>
+          </div>
+        `;
+      }
+
+      // 翌月の空白
+      const endWeekday = lastDay.getDay();
+      for (let i = 1; i <= 6 - endWeekday; i++) {
+        html += `<div class="calendar-day other-month"><div class="date">${i}</div></div>`;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    // 勤怠一覧を描画
+    function renderAttendanceList() {
+      const tbody = document.getElementById('attendanceList');
+      const monthTitle = document.getElementById('monthTitle');
+      const user = Auth.getCurrentUser();
+
+      monthTitle.textContent = `${currentMonth}月の勤怠記録`;
+
+      const lastDay = new Date(currentYear, currentMonth, 0).getDate();
+      const records = Storage.getMonthlyAttendance(user.id, currentYear, currentMonth);
+      const recordMap = {};
+      records.forEach(r => {
+        recordMap[r.date] = r;
+      });
+
+      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      let html = '';
+
+      for (let day = 1; day <= lastDay; day++) {
+        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const date = new Date(currentYear, currentMonth - 1, day);
+        const weekday = weekdays[date.getDay()];
+        const record = recordMap[dateStr];
+
+        let breakMinutes = 0;
+        let workMinutes = 0;
+        let overtimeMinutes = 0;
+
+        if (record) {
+          if (record.breaks) {
+            record.breaks.forEach(b => {
+              if (b.start && b.end) {
+                breakMinutes += Storage.calculateDuration(b.start, b.end);
+              }
+            });
+          }
+          if (record.clockIn && record.clockOut) {
+            workMinutes = Storage.calculateDuration(record.clockIn, record.clockOut) - breakMinutes;
+            overtimeMinutes = Math.max(0, workMinutes - 8 * 60);
+          }
+        }
+
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        const rowClass = isWeekend ? 'style="background-color: #fafafa;"' : '';
+
+        html += `
+          <tr ${rowClass}>
+            <td>${dateStr}</td>
+            <td style="color: ${date.getDay() === 0 ? 'var(--danger-color)' : date.getDay() === 6 ? 'var(--primary-color)' : 'inherit'}">${weekday}</td>
+            <td>${record?.clockIn || '-'}</td>
+            <td>${record?.clockOut || '-'}</td>
+            <td>${breakMinutes > 0 ? Storage.minutesToHoursMinutes(breakMinutes) : '-'}</td>
+            <td>${workMinutes > 0 ? Storage.minutesToHoursMinutes(workMinutes) : '-'}</td>
+            <td>${overtimeMinutes > 0 ? Storage.minutesToHoursMinutes(overtimeMinutes) : '-'}</td>
+            <td>${record?.note || ''}</td>
+          </tr>
+        `;
+      }
+
+      tbody.innerHTML = html;
+    }
+
+    // 日付詳細を表示
+    function showDayDetail(dateStr) {
+      document.getElementById('editDate').value = dateStr;
+      const user = Auth.getCurrentUser();
+      const record = Storage.getAttendanceByDate(user.id, dateStr);
+      if (record) {
+        document.getElementById('editClockIn').value = record.clockIn || '';
+        document.getElementById('editClockOut').value = record.clockOut || '';
+      } else {
+        document.getElementById('editClockIn').value = '';
+        document.getElementById('editClockOut').value = '';
+      }
+      document.getElementById('editModal').classList.add('active');
+    }
+
+    // モーダルを閉じる
+    function closeModal() {
+      document.getElementById('editModal').classList.remove('active');
+    }
+
+    // 修正申請を送信
+    function submitEditRequest() {
+      const user = Auth.getCurrentUser();
+      const date = document.getElementById('editDate').value;
+      const clockIn = document.getElementById('editClockIn').value;
+      const clockOut = document.getElementById('editClockOut').value;
+      const reason = document.getElementById('editReason').value;
+
+      if (!date || !reason) {
+        alert('日付と修正理由は必須です');
+        return;
+      }
+
+      const request = {
+        userId: user.id,
+        userName: user.name,
+        type: 'attendance_edit',
+        date: date,
+        clockIn: clockIn,
+        clockOut: clockOut,
+        reason: reason
+      };
+
+      Storage.createRequest(request);
+      alert('修正申請を送信しました');
+      closeModal();
+      document.getElementById('editForm').reset();
+    }
+
+    // モーダル外クリックで閉じる
+    document.getElementById('editModal').addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>

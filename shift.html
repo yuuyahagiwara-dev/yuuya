@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>シフト管理 - 勤怠管理システム</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-logo">
+      <span>勤怠管理</span>
+    </div>
+    <nav class="header-nav">
+      <a href="dashboard.html">打刻</a>
+      <a href="history.html">勤怠履歴</a>
+      <a href="shift.html" class="active">シフト</a>
+      <a href="approval.html">申請</a>
+      <a href="report.html">レポート</a>
+    </nav>
+    <div class="header-user">
+      <span class="header-user-name"></span>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ -->
+  <main class="main-content">
+    <div class="container">
+      <!-- シフト凡例 -->
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex gap-2" style="flex-wrap: wrap;">
+            <span class="shift-tag" style="background-color: #fff3cd;">早番 (06:00-15:00)</span>
+            <span class="shift-tag" style="background-color: #d4edda;">日勤 (09:00-18:00)</span>
+            <span class="shift-tag" style="background-color: #cce5ff;">遅番 (13:00-22:00)</span>
+            <span class="shift-tag" style="background-color: #e2d4f0;">夜勤 (22:00-07:00)</span>
+            <span class="shift-tag" style="background-color: #f8d7da;">休み</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- シフト表 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="d-flex align-center gap-2">
+            <button class="btn btn-sm btn-outline" id="prevMonth">&lt; 前月</button>
+            <h3 id="shiftTitle" style="margin: 0 20px;">----年--月</h3>
+            <button class="btn btn-sm btn-outline" id="nextMonth">翌月 &gt;</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="shift-table" id="shiftTable">
+            <!-- シフト表がここに表示される -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 管理者向けメッセージ -->
+      <div class="card" id="adminInfo" style="display: none;">
+        <div class="card-header">
+          <span>管理者メニュー</span>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info" style="margin: 0;">
+            <strong>シフト編集モード</strong><br>
+            セルをクリックして部下のシフトを設定できます。変更は即座に反映されます。
+          </div>
+        </div>
+      </div>
+
+      <!-- 一般ユーザー向けメッセージ -->
+      <div class="card" id="userInfo" style="display: none;">
+        <div class="card-header">
+          <span>シフト管理について</span>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning" style="margin: 0;">
+            シフトの閲覧のみ可能です。シフトの編集は管理者にお問い合わせください。
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- シフト編集モーダル -->
+  <div class="modal-overlay" id="shiftModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="shiftModalTitle">シフト編集</h3>
+        <button class="modal-close" onclick="ShiftManager.closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="shiftForm">
+          <div class="form-group">
+            <label for="shiftType">シフトタイプ</label>
+            <select id="shiftType" class="form-control">
+              <option value="">未設定</option>
+              <option value="morning">早番 (06:00-15:00)</option>
+              <option value="day">日勤 (09:00-18:00)</option>
+              <option value="late">遅番 (13:00-22:00)</option>
+              <option value="night">夜勤 (22:00-07:00)</option>
+              <option value="holiday">休み</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="shiftNote">備考</label>
+            <textarea id="shiftNote" class="form-control" rows="2" placeholder="備考があれば入力"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger btn-sm" onclick="ShiftManager.deleteShift()">削除</button>
+        <div style="flex: 1;"></div>
+        <button class="btn btn-secondary" onclick="ShiftManager.closeModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="ShiftManager.saveShift()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/shift.js"></script>
+  <script>
+    // モーダル外クリックで閉じる
+    document.getElementById('shiftModal').addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        ShiftManager.closeModal();
+      }
+    });
+
+    // 管理者/一般ユーザー向けメッセージの表示切り替え
+    document.addEventListener('DOMContentLoaded', () => {
+      if (Auth.isAdmin()) {
+        document.getElementById('adminInfo').style.display = 'block';
+      } else {
+        document.getElementById('userInfo').style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
