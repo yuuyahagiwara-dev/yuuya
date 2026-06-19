@@ -92,6 +92,16 @@
     function demoLogin(provider) {
       alert(`${provider}でのログインは現在利用できません。\nデモ用アカウントをご利用ください。`);
     }
+
+    // デバッグ: 初期化確認
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Storage初期化チェック:', Storage.getUsers());
+      // LocalStorageが空の場合は再初期化
+      if (!Storage.getUsers() || Storage.getUsers().length === 0) {
+        console.log('ユーザーデータがないため再初期化');
+        Storage.initialize();
+      }
+    });
   </script>
 </body>
 </html>
