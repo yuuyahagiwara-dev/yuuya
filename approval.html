@@ -12,12 +12,21 @@
     <div class="header-logo">
       <span>勤怠管理</span>
     </div>
-    <nav class="header-nav">
+    <button class="menu-toggle" onclick="toggleMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <nav class="header-nav" id="headerNav">
       <a href="dashboard.html">打刻</a>
       <a href="history.html">勤怠履歴</a>
       <a href="shift.html">シフト</a>
       <a href="approval.html" class="active">申請</a>
       <a href="report.html">レポート</a>
+      <div class="header-user mobile">
+        <span class="header-user-name"></span>
+        <button class="btn-logout">ログアウト</button>
+      </div>
     </nav>
     <div class="header-user">
       <span class="header-user-name"></span>
@@ -124,6 +133,11 @@
         document.getElementById('pendingTab').style.display = 'none';
       }
     });
+
+    // メニュートグル
+    function toggleMenu() {
+      document.getElementById('headerNav').classList.toggle('active');
+    }
   </script>
 </body>
 </html>

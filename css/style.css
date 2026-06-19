@@ -821,75 +821,338 @@ body {
   gap: 10px;
 }
 
+/* ========== ハンバーガーメニュー ========== */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 24px;
+  height: 3px;
+  background: white;
+  margin: 5px 0;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
 /* ========== レスポンシブ ========== */
 @media (max-width: 768px) {
+  /* ヘッダー */
   .header {
     flex-wrap: wrap;
     height: auto;
-    padding: 10px 20px;
+    padding: 12px 16px;
+  }
+
+  .menu-toggle {
+    display: block;
   }
 
   .header-nav {
-    order: 3;
+    display: none;
     width: 100%;
-    justify-content: center;
-    padding-top: 10px;
-    gap: 10px;
+    flex-direction: column;
+    background: var(--primary-dark);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    padding: 0;
+    box-shadow: var(--shadow);
+  }
+
+  .header-nav.active {
+    display: flex;
   }
 
   .header-nav a {
-    padding: 6px 12px;
-    font-size: 0.9rem;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0;
+    text-align: center;
+    font-size: 1rem;
   }
 
+  .header-nav a:last-child {
+    border-bottom: none;
+  }
+
+  .header-user {
+    display: none;
+  }
+
+  .header-user.mobile {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--primary-dark);
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* メインコンテンツ */
   .main-content {
-    margin-top: 100px;
+    margin-top: 60px;
+    padding: 12px;
+  }
+
+  /* 打刻エリア */
+  .punch-area {
+    padding: 20px 10px;
   }
 
   .current-time {
     font-size: 2.5rem;
   }
 
+  .current-date {
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+
   .punch-buttons {
-    gap: 15px;
+    gap: 12px;
+    justify-content: center;
   }
 
   .btn-punch {
-    width: 100px;
-    height: 100px;
-    font-size: 0.9rem;
+    width: 90px;
+    height: 90px;
+    font-size: 0.85rem;
   }
 
+  .btn-punch svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .punch-status {
+    padding: 15px;
+    margin-top: 20px;
+  }
+
+  /* 統計カード */
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
 
+  .stat-card {
+    padding: 15px 10px;
+  }
+
+  .stat-card-icon {
+    font-size: 1.5rem;
+  }
+
+  .stat-card-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-card-label {
+    font-size: 0.8rem;
+  }
+
+  /* カード */
+  .card {
+    margin-bottom: 12px;
+  }
+
+  .card-header {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .card-body {
+    padding: 16px;
+  }
+
+  /* カレンダー */
   .calendar-day {
-    min-height: 60px;
+    min-height: 50px;
     padding: 4px;
   }
 
+  .calendar-day .date {
+    font-size: 0.85rem;
+  }
+
+  .calendar-day .attendance-info {
+    font-size: 0.65rem;
+  }
+
+  .calendar-day-header {
+    padding: 8px 4px;
+    font-size: 0.85rem;
+  }
+
+  /* テーブル */
   .table th,
   .table td {
-    padding: 8px;
+    padding: 8px 6px;
+    font-size: 0.8rem;
+  }
+
+  .table-responsive {
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+
+  /* タブ */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab {
+    padding: 10px 16px;
     font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  /* モーダル */
+  .modal {
+    margin: 10px;
+    max-width: calc(100% - 20px);
+    max-height: calc(100vh - 20px);
+  }
+
+  .modal-header {
+    padding: 16px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-footer {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+
+  /* 申請リスト */
+  .request-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .request-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* ボタン */
+  .btn {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+
+  .btn-lg {
+    padding: 14px 24px;
+    font-size: 1rem;
+  }
+
+  /* フォーム */
+  .form-control {
+    padding: 10px 14px;
+    font-size: 16px; /* iOS zoom防止 */
+  }
+
+  /* グラフ */
+  .chart-container {
+    height: 250px;
+    padding: 10px;
   }
 }
 
 @media (max-width: 480px) {
+  .login-container {
+    padding: 20px;
+  }
+
   .login-box {
-    padding: 30px 20px;
-    margin: 20px;
+    padding: 24px 16px;
+    margin: 0;
+  }
+
+  .login-logo h1 {
+    font-size: 1.5rem;
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px 8px;
+  }
+
+  .stat-card-value {
+    font-size: 1.2rem;
+  }
+
+  .punch-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    max-width: 220px;
+    margin: 0 auto;
   }
 
   .btn-punch {
-    width: 80px;
-    height: 80px;
-    font-size: 0.8rem;
+    width: 100%;
+    height: 85px;
+    border-radius: 12px;
+  }
+
+  .current-time {
+    font-size: 2rem;
+  }
+
+  .calendar-header {
+    padding: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .calendar-header h3 {
+    font-size: 1rem;
+    order: 1;
+    width: 100%;
+    text-align: center;
+  }
+
+  .calendar-nav {
+    order: 2;
+  }
+
+  .calendar-day {
+    min-height: 45px;
+  }
+
+  .calendar-day .attendance-info {
+    display: none;
+  }
+
+  /* シフト表 */
+  .shift-table {
+    font-size: 0.75rem;
+  }
+
+  .shift-tag {
+    padding: 2px 4px;
+    font-size: 0.65rem;
   }
 }
 
